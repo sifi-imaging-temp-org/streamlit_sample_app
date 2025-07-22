@@ -68,7 +68,7 @@ GitHub Releases ページからダウンロードした `image-vX.Y.Z.tar.gz` �
      `--rm` を付けることで、コンテナ停止時に自動で削除されます。`--name`でコンテナに名前を付けておくと、後で停止するのが簡単になります。
     ```bash
     # 上記で読み込まれたイメージ名とタグに置き換えてください
-    docker run -d --rm --name streamlit_sample_app -p 8501:8501 ghcr.io/nakamichi-sifi/streamlit_sample_app:vX.Y.Z
+    docker run -d --rm --name streamlit_sample_app -p 8501:8501 ghcr.io/sifi-imaging-temp-org/streamlit_sample_app:vX.Y.Z
 
     # http://localhost:8501/ で確認
     ```
