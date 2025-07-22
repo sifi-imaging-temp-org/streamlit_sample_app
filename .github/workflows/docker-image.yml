@@ -90,7 +90,7 @@ jobs:
           files: ${{ env.ASSET_PATH }}
           generate_release_notes: true
 
-      - name: Push all tags to GHCR
-        # プルリクエスト時は実行せず、mainへのプッシュ時と手動実行時のみプッシュする
-        if: github.event_name != 'pull_request'
-        run: docker push --all-tags ghcr.io/${{ github.repository }}
+#      - name: Push all tags to GHCR
+#        # プルリクエスト時は実行せず、mainへのプッシュ時と手動実行時のみプッシュする
+#        if: github.event_name != 'pull_request'
+#        run: docker push --all-tags ghcr.io/${{ github.repository }}
