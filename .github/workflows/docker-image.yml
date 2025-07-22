@@ -44,14 +44,30 @@ jobs:
         with:
           images: ghcr.io/${{ github.repository }}
 
-      - name: Build and push Docker image with cache
+      - name: Build and load Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
           # docker-compose.override.yamlで指定されているDockerfileのパス
           file: ./docker/Dockerfile
-          push: true
+          # プッシュはせず、後続のステップでスキャンするためにローカルにロードする
+          load: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Scan image for vulnerabilities with Trivy
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          # metadata-actionが生成したタグのリストから最初のものをスキャン対象とする
+          image-ref: ${{ fromJSON(steps.meta.outputs.json).tags[0] }}
+          format: 'table'
+          # HIGH以上の脆弱性が検知されたらビルドを失敗させる
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Push all tags to GHCR
+        run: docker push --all-tags ghcr.io/${{ github.repository }}

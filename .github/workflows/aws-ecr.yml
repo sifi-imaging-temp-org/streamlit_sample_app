@@ -1,0 +1,104 @@
+# gemini code assist から引用
+#
+# 事前準備 (AWSとGitHubの設定)
+# このワークフローを機能させるには、AWS側とGitHub側でいくつかの設定が必要です。
+# 
+# 1. AWSでの設定
+#   1. ECRリポジトリの作成:
+#       - AWSマネジメントコンソールでECRに移動し、新しいプライベートリポジトリを作成します（例: streamlit-sample-app）。  
+#   1. IAM OIDCプロバイダーの設定:
+#       - IAMコンソールで、GitHubをIDプロバイダーとして追加します。これはGitHub ActionsがAWSに対して自身を安全に認証するために一度だけ必要な設定です。
+#       - 詳細な手順はAWSの公式ドキュメントを参照してください。
+#   1. IAMロールの作成:
+#       - GitHub Actionsが引き受けるためのIAMロールを作成します。
+#       - 信頼されたエンティティ: 上記で作成したGitHub OIDCプロバイダーを選択します。Audienceは sts.amazonaws.com を指定し、リポジトリを限定 (your-github-username/your-repo) してセキュリティを高めます。
+#       - 許可ポリシー: このロールには、ECRにイメージをプッシュするための権限が必要です。AmazonEC2ContainerRegistryPowerUser などの管理ポリシーをアタッチするのが簡単です。
+#       - 作成したロールの ARN (例: arn:aws:iam::123456789012:role/GitHubAction-ECR-PushRole) をコピーしておきます。
+# 1. GitHubリポジトリでの設定  
+#    リポジトリの Settings > Secrets and variables > Actions で、以下の3つのシークレットを作成します。  
+#   - AWS_IAM_ROLE_ARN:
+#   - AWSで作成したIAMロールのARNを貼り付けます。
+#   - AWS_REGION:
+#   - ECRリポジトリを作成したリージョン名（例: ap-northeast-1）を入力します。
+#   - ECR_REPOSITORY:
+#   - ECRで作成したリポジトリ名（例: streamlit-sample-app）を入力します。
+#
+# まとめ  
+#   以上の設定が完了すると、mainブランチへのプッシュや手動実行をトリガーにして、Dockerイメージがビルドされ、安全にAWS ECRへプッシュされるようになります。
+# 
+#   OIDCを利用することで、漏洩のリスクがあるアクセスキーをGitHub Secretsに保存する必要がなくなり、よりセキュアなCI/CDパイプラインを構築できます。
+
+name: Build and Push to AWS ECR
+
+on:
+#  push:
+#    branches: [ "main" ]
+#    tags:
+#      - 'v*.*.*'
+  workflow_dispatch:
+
+# OIDC認証のために必要な権限
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  build_and_push_to_ecr:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials using OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          # AWSで作成したIAM RoleのARNをSecretに設定
+          role-to-assume: ${{ secrets.AWS_IAM_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Log in to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          # ECRの形式: <registry>/<repository>
+          # login-ecrステップの出力からregistry名を取得し、
+          # Secretからリポジトリ名を取得して結合
+          images: ${{ steps.login-ecr.outputs.registry }}/${{ secrets.ECR_REPOSITORY }}
+
+      - name: Build and load Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./docker/Dockerfile
+          # プッシュはせず、後続のステップでスキャンするためにローカルにロードする
+          load: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Scan image for vulnerabilities with Trivy
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          # metadata-actionが生成したタグのリストから最初のものをスキャン対象とする
+          image-ref: ${{ fromJSON(steps.meta.outputs.json).tags[0] }}
+          format: 'table'
+          # HIGH以上の脆弱性が検知されたらビルドを失敗させる
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Push all tags to ECR
+        run: docker push --all-tags ${{ steps.login-ecr.outputs.registry }}/${{ secrets.ECR_REPOSITORY }}
