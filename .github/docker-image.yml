@@ -6,6 +6,9 @@ on:
     # セマンティックバージョニングのタグ（例: v1.0.0）がプッシュされた時も実行
     tags:
       - 'v*.*.*'
+  
+  # 手動実行を許可する
+  workflow_dispatch:
 
 jobs:
   build_and_push:
