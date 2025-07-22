@@ -17,8 +17,9 @@ jobs:
     runs-on: ubuntu-latest
     # GHCRへの書き込み権限をジョブに付与
     permissions:
-      contents: read
-      packages: write
+      contents: write      # To create releases and upload assets
+      packages: write      # To push packages to GHCR
+      pull-requests: read  # To automatically generate release notes
 
     steps:
       - name: Checkout repository
@@ -70,6 +71,24 @@ jobs:
           ignore-unfixed: true
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
+
+      - name: Save Docker image to a tarball and prepare for release
+        # タグがプッシュされた時のみ実行
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          IMAGE_NAME=$(echo '${{ fromJSON(steps.meta.outputs.json).tags[0] }}')
+          TAR_FILENAME="image-${{ github.ref_name }}.tar"
+          docker save -o "${TAR_FILENAME}" "${IMAGE_NAME}"
+          gzip "${TAR_FILENAME}"
+          echo "ASSET_PATH=${TAR_FILENAME}.gz" >> $GITHUB_ENV
+
+      - name: Create Release and Upload Asset
+        # タグがプッシュされた時のみ実行
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ env.ASSET_PATH }}
+          generate_release_notes: true
 
       - name: Push all tags to GHCR
         # プルリクエスト時は実行せず、mainへのプッシュ時と手動実行時のみプッシュする
