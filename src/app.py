@@ -1,7 +1,7 @@
 import streamlit as st
 
 APP_NAME = "My first app"
-APP_VERSION = "0.3.0"
+APP_VERSION = "0.4.0"
 
 st.set_page_config(
     page_title=APP_NAME,
