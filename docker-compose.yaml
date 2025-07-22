@@ -1,6 +1,6 @@
 services:
   app:
-    image: streamlit_sample_app:latest
+    image: streamlit_sample_app:${IMAGE_TAG:-latest}
     container_name: streamlit_sample_app
     restart: always
     ports:
