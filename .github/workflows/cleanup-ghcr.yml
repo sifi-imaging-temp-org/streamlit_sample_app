@@ -1,0 +1,24 @@
+name: Cleanup GHCR
+
+on:
+  # 毎日午前3時 (UTC) に実行
+  schedule:
+    - cron: "0 3 * * *"
+  # 手動実行も可能にする
+  workflow_dispatch:
+
+jobs:
+  delete-untagged-packages:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read
+    steps:
+      - uses: actions/delete-package-versions@v5
+        with:
+          # あなたのリポジトリ名（オーナー名を含む）
+          package-name: 'streamlit_sample_app'
+          # 削除するバージョンの最小数（常に1つは残す）
+          min-versions-to-keep: 1
+          # タグが付いていないバージョンを削除対象にする
+          delete-untagged-versions: true
