@@ -6,6 +6,8 @@ on:
     # セマンティックバージョニングのタグ（例: v1.0.0）がプッシュされた時も実行
     tags:
       - 'v*.*.*'
+  pull_request:
+    branches: [ "main" ]
   
   # 手動実行を許可する
   workflow_dispatch:
@@ -70,4 +72,6 @@ jobs:
           severity: 'CRITICAL,HIGH'
 
       - name: Push all tags to GHCR
+        # プルリクエスト時は実行せず、mainへのプッシュ時と手動実行時のみプッシュする
+        if: github.event_name != 'pull_request'
         run: docker push --all-tags ghcr.io/${{ github.repository }}

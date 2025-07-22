@@ -35,6 +35,8 @@ on:
 #    branches: [ "main" ]
 #    tags:
 #      - 'v*.*.*'
+#  pull_request:
+#    branches: [ "main" ]
   workflow_dispatch:
 
 # OIDC認証のために必要な権限
@@ -101,4 +103,6 @@ jobs:
           severity: 'CRITICAL,HIGH'
 
       - name: Push all tags to ECR
+        # プルリクエスト時は実行せず、mainへのプッシュ時と手動実行時のみプッシュする
+        if: github.event_name != 'pull_request'
         run: docker push --all-tags ${{ steps.login-ecr.outputs.registry }}/${{ secrets.ECR_REPOSITORY }}
