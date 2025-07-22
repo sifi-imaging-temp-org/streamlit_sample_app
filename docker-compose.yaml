@@ -1,0 +1,7 @@
+services:
+  app:
+    image: streamlit_sample_app:latest
+    container_name: streamlit_sample_app
+    restart: always
+    ports:
+      - "8501:8501"

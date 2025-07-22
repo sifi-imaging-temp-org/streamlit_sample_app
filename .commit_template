@@ -1,0 +1,33 @@
+# ==== Commit Messages ====
+
+# ==== Commit Messages(Template) ====
+# <Prefix> <Emoji> #<Issue Number> <Title>
+# GitHub 例) feat :sparkles: #777 ログイン機能を実装
+# Azure DevOps 例) feat ✨ #777 ログイン機能を実装
+
+# ==== Prefix Emoji ====
+# feat: :sparkles: 機能の追加や変更
+# docs: :memo: ドキュメントの更新
+# fix: :bug: バグ修正
+# refactor: :recycle: リファクタリング
+# test: :green_heart: テストコードの追加や修正
+# chore: :building_construction: ビルドツールの導入や依存関係を更新など
+
+# ==== Emojis ====
+# 🐛  :bug: バグ修正
+# 👍  :+1: 機能改善
+# ✨  :sparkles: 部分的な機能追加
+# 🎨  :art: デザイン変更のみ
+# 💢  :anger: コンフリクト
+# 🚧  :construction: WIP
+# 📝  :memo: 文言修正
+# ♻️  :recycle: リファクタリング
+# 🔥  :fire: 不要な機能・使われなくなった機能の削除
+# 💚  :green_heart: テストやCIの修正・改善
+# 👕  :shirt: Lintエラーの修正やコードスタイルの修正
+# 🚀  :rocket: パフォーマンス改善
+# 🆙  :up: 依存パッケージなどのアップデート
+# 👮  :cop: セキュリティ関連の改善
+# ⚙   :gear: config変更
+# 📚  :books: ドキュメント
+# 🏗️  :building_construction: ビルドツールの導入や依存関係を更新など
