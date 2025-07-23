@@ -59,7 +59,7 @@ sequenceDiagram
     participant GitHub Repository
     participant GitHub Actions Runner
 
-    Developer->>GitHub Repository: Push tag (e.g., v1.0.0)
+    Developer->>GitHub Repository: Push to main branch or Push tag (e.g., v1.0.0)
     GitHub Repository->>GitHub Actions Runner: Trigger "Docker Image CI" workflow
 
     activate GitHub Actions Runner
@@ -69,10 +69,12 @@ sequenceDiagram
     GitHub Actions Runner->>GitHub Actions Runner: 4. Extract Metadata
     GitHub Actions Runner->>GitHub Actions Runner: 5. Build Docker Image
     GitHub Actions Runner->>GitHub Actions Runner: 6. Scan Image with Trivy
+    GitHub Actions Runner->>GitHub Actions Runner: 7. Save Image to .tar.gz
 
     alt Tag Push Event
-        GitHub Actions Runner->>GitHub Actions Runner: 7. Save Image to .tar.gz
-        GitHub Actions Runner->>GitHub Repository: 8. Create Release & Upload Asset
+        GitHub Actions Runner->>GitHub Repository: 8. Create Formal Release & Upload Asset
+    else Main Branch Push Event
+        GitHub Actions Runner->>GitHub Repository: 8. Create or Update Nightly Release & Upload Asset
     end
 
     deactivate GitHub Actions Runner
@@ -80,15 +82,18 @@ sequenceDiagram
 ```
 ### リリースされたイメージの利用方法
 
-GitHub Releases ページからダウンロードした `image-vX.Y.Z.tar.gz` ファイルを使ってコンテナを実行する手順です。
+GitHub Releases ページからダウンロードした  
+`streamlit_sample_app-docker-image-vX.Y.Z.tar.gz`  
+(または `streamlit_sample_app-docker-image-nightly.tar.gz`)   
+ファイルを使ってコンテナを実行する手順です。
 
 1. **イメージのダウンロード**
-   - リリースページから `image-vX.Y.Z.tar.gz` のようなアセットをダウンロードします。
+   - リリースページから `streamlit_sample_app-docker-image-vX.Y.Z.tar.gz` のようなアセットをダウンロードします。
 1. **Dockerへのイメージ読み込み**
    - ターミナルで以下のコマンドを実行してください。
     ```bash
-    # image-vX.Y.Z.tar.gz を実際のファイル名に置き換えてください
-    docker load -i image-vX.Y.Z.tar.gz
+    # streamlit_sample_app-docker-image-vX.Y.Z.tar.gz を実際のファイル名に置き換えてください
+    docker load -i streamlit_sample_app-docker-image-vX.Y.Z.tar.gz
     ```
 1. **コンテナの実行**
    - 読み込んだイメージを使ってコンテナを起動します。`-d` でバックグラウンド実行、`-p` でポートをPCの8501番に接続します。  
