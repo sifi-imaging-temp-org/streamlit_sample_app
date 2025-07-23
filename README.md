@@ -77,3 +77,31 @@ GitHub Releases ページからダウンロードした `image-vX.Y.Z.tar.gz` �
     ```bash
     docker stop streamlit_sample_app
     ```
+
+#### ワークフローのシーケンス図
+
+```mermaid
+sequenceDiagram
+    participant Developer
+    participant GitHub Repository
+    participant GitHub Actions Runner
+
+    Developer->>GitHub Repository: Push tag (e.g., v1.0.0)
+    GitHub Repository->>GitHub Actions Runner: Trigger "Docker Image CI" workflow
+
+    activate GitHub Actions Runner
+    GitHub Actions Runner->>GitHub Repository: 1. Checkout Code
+    GitHub Actions Runner->>GitHub Actions Runner: 2. Setup QEMU & Buildx
+    GitHub Actions Runner->>GitHub Repository: 3. Login to GHCR
+    GitHub Actions Runner->>GitHub Actions Runner: 4. Extract Metadata
+    GitHub Actions Runner->>GitHub Actions Runner: 5. Build Docker Image
+    GitHub Actions Runner->>GitHub Actions Runner: 6. Scan Image with Trivy
+
+    alt Tag Push Event
+        GitHub Actions Runner->>GitHub Actions Runner: 7. Save Image to .tar.gz
+        GitHub Actions Runner->>GitHub Repository: 8. Create Release & Upload Asset
+    end
+
+    deactivate GitHub Actions Runner
+
+```
