@@ -49,36 +49,9 @@ free plan の private repositry だと 容量制限が厳しい
 そのため、  
 tag 付けの際、 release まで行うように設定し、  
 その assets として 添付するようにした  
-（release の assets には容量制限は無いっぽい ）
+（release の assets には、1ファイル 2GB までだが、トータルの容量制限は無いっぽい ）
 
-#### リリースされたイメージの利用方法
-
-GitHub Releases ページからダウンロードした `image-vX.Y.Z.tar.gz` ファイルを使ってコンテナを実行する手順です。
-
-1. **イメージのダウンロード**
-   - リリースページから `image-vX.Y.Z.tar.gz` のようなアセットをダウンロードします。
-1. **Dockerへのイメージ読み込み**
-   - ターミナルで以下のコマンドを実行してください。
-    ```bash
-    # image-vX.Y.Z.tar.gz を実際のファイル名に置き換えてください
-    docker load -i image-vX.Y.Z.tar.gz
-    ```
-1. **コンテナの実行**
-   - 読み込んだイメージを使ってコンテナを起動します。`-d` でバックグラウンド実行、`-p` でポートをPCの8501番に接続します。  
-     `--rm` を付けることで、コンテナ停止時に自動で削除されます。`--name`でコンテナに名前を付けておくと、後で停止するのが簡単になります。
-    ```bash
-    # 上記で読み込まれたイメージ名とタグに置き換えてください
-    docker run -d --rm --name streamlit_sample_app -p 8501:8501 ghcr.io/sifi-imaging-temp-org/streamlit_sample_app:vX.Y.Z
-
-    # http://localhost:8501/ で確認
-    ```
-1. **コンテナの停止**
-   - 以下のコマンドでコンテナを停止します。`--rm` オプションを付けているため、コンテナは自動的に削除されます。
-    ```bash
-    docker stop streamlit_sample_app
-    ```
-
-#### ワークフローのシーケンス図
+#### シーケンス図
 
 ```mermaid
 sequenceDiagram
@@ -105,3 +78,29 @@ sequenceDiagram
     deactivate GitHub Actions Runner
 
 ```
+#### リリースされたイメージの利用方法
+
+GitHub Releases ページからダウンロードした `image-vX.Y.Z.tar.gz` ファイルを使ってコンテナを実行する手順です。
+
+1. **イメージのダウンロード**
+   - リリースページから `image-vX.Y.Z.tar.gz` のようなアセットをダウンロードします。
+1. **Dockerへのイメージ読み込み**
+   - ターミナルで以下のコマンドを実行してください。
+    ```bash
+    # image-vX.Y.Z.tar.gz を実際のファイル名に置き換えてください
+    docker load -i image-vX.Y.Z.tar.gz
+    ```
+1. **コンテナの実行**
+   - 読み込んだイメージを使ってコンテナを起動します。`-d` でバックグラウンド実行、`-p` でポートをPCの8501番に接続します。  
+     `--rm` を付けることで、コンテナ停止時に自動で削除されます。`--name`でコンテナに名前を付けておくと、後で停止するのが簡単になります。
+    ```bash
+    # 上記で読み込まれたイメージ名とタグに置き換えてください
+    docker run -d --rm --name streamlit_sample_app -p 8501:8501 ghcr.io/sifi-imaging-temp-org/streamlit_sample_app:vX.Y.Z
+
+    # http://localhost:8501/ で確認
+    ```
+1. **コンテナの停止**
+   - 以下のコマンドでコンテナを停止します。`--rm` オプションを付けているため、コンテナは自動的に削除されます。
+    ```bash
+    docker stop streamlit_sample_app
+    ```
