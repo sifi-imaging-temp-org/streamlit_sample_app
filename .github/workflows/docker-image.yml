@@ -88,7 +88,9 @@ jobs:
         # プルリクエスト以外で実行 (タグ or mainへのプッシュ時)
         if: github.event_name != 'pull_request'
         run: |
-          REPO_NAME=${{ github.repository#*/ }}
+          # github.repository (owner/repo) からリポジトリ名のみを抽出
+          FULL_REPO_NAME="${{ github.repository }}"
+          REPO_NAME="${FULL_REPO_NAME#*/}"
           if [[ "${{ github.ref_type }}" == "tag" ]]; then
             TAR_FILENAME="${REPO_NAME}-docker-image-${{ github.ref_name }}.tar"
           else
