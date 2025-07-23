@@ -37,7 +37,7 @@ docker compose up -d
 docker compose down
 ```
 
-### github actions
+## github actions
 
 [docker-image.yml](./.github/workflows/docker-image.yml) にて  
 main への push や tag 付けのタイミングで、docker image の作成まで行っている
@@ -51,7 +51,7 @@ tag 付けの際、 release まで行うように設定し、
 その assets として 添付するようにした  
 （release の assets には、1ファイル 2GB までだが、トータルの容量制限は無いっぽい ）
 
-#### シーケンス図
+### シーケンス図
 
 ```mermaid
 sequenceDiagram
@@ -78,7 +78,7 @@ sequenceDiagram
     deactivate GitHub Actions Runner
 
 ```
-#### リリースされたイメージの利用方法
+### リリースされたイメージの利用方法
 
 GitHub Releases ページからダウンロードした `image-vX.Y.Z.tar.gz` ファイルを使ってコンテナを実行する手順です。
 

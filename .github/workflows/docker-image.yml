@@ -15,6 +15,8 @@ on:
 jobs:
   build_and_push:
     runs-on: ubuntu-latest
+    env:
+      APP_NAME: streamlit-sample-app
     # GHCRへの書き込み権限をジョブに付与
     permissions:
       contents: write      # To create releases and upload assets
@@ -45,7 +47,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/${{ github.repository }}
+          images: ghcr.io/${{ github.repository_owner }}/${{ env.APP_NAME }}
           tags: |
             # mainブランチへのプッシュ時は 'nightly' と 'latest' タグを付与
             type=raw,value=nightly,enable=${{ github.ref == 'refs/heads/main' }}
@@ -78,22 +80,27 @@ jobs:
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
 
-#      - name: Push Docker image to GHCR
-#        # プルリクエスト時は実行せず、mainへのプッシュ時とタグプッシュ時のみ実行
-#        if: github.event_name != 'pull_request'
-#        run: docker push --all-tags ghcr.io/${{ github.repository }}
+      # - name: Push Docker image to GHCR
+      #   # プルリクエスト時は実行せず、mainへのプッシュ時とタグプッシュ時のみ実行 (現在は無効化されています)
+      #   if: github.event_name != 'pull_request'
+      #   run: docker push --all-tags ghcr.io/${{ github.repository_owner }}/${{ env.APP_NAME }}
 
-      # --- Formal Release (for tags) ---
-      - name: Save Docker image to a tarball for release
-        # タグがプッシュされた時のみ実行
-        if: startsWith(github.ref, 'refs/tags/')
+      # --- Release Asset Preparation ---
+      - name: Save Docker image to a tarball for release asset
+        # プルリクエスト以外で実行 (タグ or mainへのプッシュ時)
+        if: github.event_name != 'pull_request'
         run: |
+          if [[ "${{ github.ref_type }}" == "tag" ]]; then
+            TAR_FILENAME="${{ env.APP_NAME }}-docker-image-${{ github.ref_name }}.tar"
+          else
+            TAR_FILENAME="${{ env.APP_NAME }}-docker-image-nightly.tar"
+          fi
           IMAGE_NAME=$(echo '${{ fromJSON(steps.meta.outputs.json).tags[0] }}')
-          TAR_FILENAME="image-${{ github.ref_name }}.tar"
           docker save -o "${TAR_FILENAME}" "${IMAGE_NAME}"
           gzip "${TAR_FILENAME}"
           echo "ASSET_PATH=${TAR_FILENAME}.gz" >> $GITHUB_ENV
 
+      # --- Formal Release (for tags) ---
       - name: Create Formal Release and Upload Asset
         # タグがプッシュされた時のみ実行
         if: startsWith(github.ref, 'refs/tags/')
@@ -108,11 +115,12 @@ jobs:
         if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
+          files: ${{ env.ASSET_PATH }}
           prerelease: true
           name: "Nightly Build (Run ID ${{ github.run_id }})"
           body: |
             This is an automated nightly build from the main branch.
             Commit: `${{ github.sha }}`
-            # Docker Image: `ghcr.io/${{ github.repository }}:nightly`
+            # Docker Image: `ghcr.io/${{ github.repository_owner }}/${{ env.APP_NAME }}:nightly`
           tag_name: nightly
           make_latest: true
