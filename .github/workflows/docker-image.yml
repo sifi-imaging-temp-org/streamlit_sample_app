@@ -1,11 +1,11 @@
-name: Docker Image CI for GHCR with Compose
+name: Docker Image CI
 
 on:
   push:
     branches: [ "main" ]
     # セマンティックバージョニングのタグ（例: v1.0.0）がプッシュされた時も実行
     tags:
-      - 'v*.*.*'
+      - "v*.*.*"
   pull_request:
     branches: [ "main" ]
   
@@ -46,8 +46,14 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ghcr.io/${{ github.repository }}
+          tags: |
+            # mainブランチへのプッシュ時は 'nightly' と 'latest' タグを付与
+            type=raw,value=nightly,enable=${{ github.ref == 'refs/heads/main' }}
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+            # セマンティックバージョニングのタグ
+            type=semver,pattern={{version}}
 
-      - name: Build and load Docker image
+      - name: Build and load Docker image for scanning
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -72,7 +78,13 @@ jobs:
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
 
-      - name: Save Docker image to a tarball and prepare for release
+#      - name: Push Docker image to GHCR
+#        # プルリクエスト時は実行せず、mainへのプッシュ時とタグプッシュ時のみ実行
+#        if: github.event_name != 'pull_request'
+#        run: docker push --all-tags ghcr.io/${{ github.repository }}
+
+      # --- Formal Release (for tags) ---
+      - name: Save Docker image to a tarball for release
         # タグがプッシュされた時のみ実行
         if: startsWith(github.ref, 'refs/tags/')
         run: |
@@ -82,7 +94,7 @@ jobs:
           gzip "${TAR_FILENAME}"
           echo "ASSET_PATH=${TAR_FILENAME}.gz" >> $GITHUB_ENV
 
-      - name: Create Release and Upload Asset
+      - name: Create Formal Release and Upload Asset
         # タグがプッシュされた時のみ実行
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
@@ -90,7 +102,17 @@ jobs:
           files: ${{ env.ASSET_PATH }}
           generate_release_notes: true
 
-#      - name: Push all tags to GHCR
-#        # プルリクエスト時は実行せず、mainへのプッシュ時と手動実行時のみプッシュする
-#        if: github.event_name != 'pull_request'
-#        run: docker push --all-tags ghcr.io/${{ github.repository }}
+      # --- Nightly Release (for main branch) ---
+      - name: Create or Update Nightly Release
+        # mainブランチへのプッシュ時のみ実行
+        if: github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          prerelease: true
+          name: "Nightly Build (Run ID ${{ github.run_id }})"
+          body: |
+            This is an automated nightly build from the main branch.
+            Commit: `${{ github.sha }}`
+            # Docker Image: `ghcr.io/${{ github.repository }}:nightly`
+          tag_name: nightly
+          make_latest: true
