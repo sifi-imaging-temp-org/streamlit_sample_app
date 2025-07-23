@@ -15,8 +15,6 @@ on:
 jobs:
   build_and_push:
     runs-on: ubuntu-latest
-    env:
-      APP_NAME: streamlit-sample-app
     # GHCRへの書き込み権限をジョブに付与
     permissions:
       contents: write      # To create releases and upload assets
@@ -47,7 +45,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/${{ github.repository_owner }}/${{ env.APP_NAME }}
+          images: ghcr.io/${{ github.repository }}
           tags: |
             # mainブランチへのプッシュ時は 'nightly' と 'latest' タグを付与
             type=raw,value=nightly,enable=${{ github.ref == 'refs/heads/main' }}
@@ -83,17 +81,18 @@ jobs:
       # - name: Push Docker image to GHCR
       #   # プルリクエスト時は実行せず、mainへのプッシュ時とタグプッシュ時のみ実行 (現在は無効化されています)
       #   if: github.event_name != 'pull_request'
-      #   run: docker push --all-tags ghcr.io/${{ github.repository_owner }}/${{ env.APP_NAME }}
+      #   run: docker push --all-tags ghcr.io/${{ github.repository }}
 
       # --- Release Asset Preparation ---
       - name: Save Docker image to a tarball for release asset
         # プルリクエスト以外で実行 (タグ or mainへのプッシュ時)
         if: github.event_name != 'pull_request'
         run: |
+          REPO_NAME=${{ github.repository#*/ }}
           if [[ "${{ github.ref_type }}" == "tag" ]]; then
-            TAR_FILENAME="${{ env.APP_NAME }}-docker-image-${{ github.ref_name }}.tar"
+            TAR_FILENAME="${REPO_NAME}-docker-image-${{ github.ref_name }}.tar"
           else
-            TAR_FILENAME="${{ env.APP_NAME }}-docker-image-nightly.tar"
+            TAR_FILENAME="${REPO_NAME}-docker-image-nightly.tar"
           fi
           IMAGE_NAME=$(echo '${{ fromJSON(steps.meta.outputs.json).tags[0] }}')
           docker save -o "${TAR_FILENAME}" "${IMAGE_NAME}"
@@ -121,6 +120,6 @@ jobs:
           body: |
             This is an automated nightly build from the main branch.
             Commit: `${{ github.sha }}`
-            # Docker Image: `ghcr.io/${{ github.repository_owner }}/${{ env.APP_NAME }}:nightly`
+            # Docker Image: `ghcr.io/${{ github.repository }}:nightly`
           tag_name: nightly
           make_latest: true
